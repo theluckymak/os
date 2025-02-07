@@ -1,0 +1,36 @@
+#!/usr/bin/python3
+import random
+import time
+import sys
+
+def generator():
+    # Ensure we have the correct number of command-line arguments
+    if len(sys.argv) != 2:
+        print("Usage: ./generator N", file=sys.stderr)
+        sys.exit(1)
+
+    # Get the input value for N
+    try:
+        N = int(sys.argv[1])
+    except ValueError:
+        print("N must be an integer", file=sys.stderr)
+        sys.exit(1)
+
+    # Validate the range of N
+    if not (5 <= N <= 180):
+        print("N must be between 5 and 180", file=sys.stderr)
+        sys.exit(1)
+
+    operators = ['+', '-', '*', '/']
+
+    for i in range(N):
+        print(f"DEBUG: Generating expression {i + 1} of {N}", file=sys.stderr)  # Debug output
+        X = random.randint(1, 9)
+        O = random.choice(operators)
+        Y = random.randint(1, 9)
+        print(f"{X} {O} {Y}", flush=True)  # Print the expression
+        time.sleep(1)
+
+if __name__ == "__main__":
+    generator()
+

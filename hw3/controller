@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+
+import os
+import sys
+import random
+import signal
+
+def controller():
+    def handle_sigusr1(signum, frame):
+        print(f"Processed {lines_processed} lines", file=sys.stderr)
+
+    signal.signal(signal.SIGUSR1, handle_sigusr1)
+
+    pipe_a = os.pipe()
+    pipe_b = os.pipe()
+    pipe_c = os.pipe()
+
+    pid1 = os.fork()
+    if pid1 == 0:
+        os.dup2(pipe_a[1], sys.stdout.fileno())
+        os.close(pipe_a[0])
+        os.close(pipe_a[1])
+        os.close(pipe_b[0])
+        os.close(pipe_b[1])
+        os.close(pipe_c[0])
+        os.close(pipe_c[1])
+        N = random.randint(120, 180)
+        os.execlp("./generator", "./generator", str(N))
+        sys.exit(1)
+
+    pid2 = os.fork()
+    if pid2 == 0:
+        os.dup2(pipe_b[0], sys.stdin.fileno())
+        os.dup2(pipe_c[1], sys.stdout.fileno())
+        os.close(pipe_a[0])
+        os.close(pipe_a[1])
+        os.close(pipe_b[0])
+        os.close(pipe_b[1])
+        os.close(pipe_c[0])
+        os.close(pipe_c[1])
+        os.execlp("/usr/bin/bc", "/usr/bin/bc")
+        sys.exit(1)
+
+    os.close(pipe_a[1])
+    os.close(pipe_b[0])
+    os.close(pipe_c[1])
+
+    global lines_processed
+    lines_processed = 0
+
+    try:
+        while True:
+            expression = os.read(pipe_a[0], 1024).decode().strip()
+            if not expression:
+                break
+            os.write(pipe_b[1], (expression + "\n").encode())
+            result = os.read(pipe_c[0], 1024).decode().strip()
+            print(f"{expression} = {result}")
+            lines_processed += 1
+
+    except KeyboardInterrupt:
+        pass
+
+    finally:
+        os.close(pipe_a[0])
+        os.close(pipe_b[1])
+        os.close(pipe_c[0])
+        os.waitpid(pid1, 0)
+        os.waitpid(pid2, 0)
+
+    sys.exit(0)
+
+if __name__ == "__main__":
+    controller()
