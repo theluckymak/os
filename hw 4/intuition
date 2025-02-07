@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Colors for output
+RED='\e[31m'
+GREEN='\e[32m'
+RESET='\e[0m'
+
+# Initialize variables
+step=1
+declare -i hits=0
+declare -i misses=0
+declare -a guessed_numbers
+
+echo "Welcome to the Intuition Game!"
+
+while true; do
+    # Generate a random number from 0 to 9
+    random_number=$((RANDOM % 10))
+
+    # Prompt the user for input
+    echo "Step: $step"
+    read -p "Please enter number from 0 to 9 (q - quit): " user_input
+
+    # Check if the input is valid
+    case "$user_input" in
+        [0-9])
+            # Convert input to integer for comparison
+            if [[ "$user_input" -eq "$random_number" ]]; then
+                echo -e "${GREEN}Hit!${RESET} My number: $random_number"
+                hits+=1
+                guessed_numbers+=("${GREEN}${random_number}${RESET}")
+            else
+                echo -e "${RED}Miss!${RESET} My number: $random_number"
+                misses+=1
+                guessed_numbers+=("${RED}${random_number}${RESET}")
+            fi
+            ;;
+        q)
+            echo "Goodbye!"
+            exit 0
+            ;;
+        *)
+            echo "Input error!"
+            continue
+            ;;
+    esac
+
+    # Calculate percentages
+    total=$((hits + misses))
+    if ((total > 0)); then
+        hit_percent=$((hits * 100 / total))
+        miss_percent=$((100 - hit_percent))
+    else
+        hit_percent=0
+        miss_percent=0
+    fi
+
+    # Display statistics
+    echo "Hit: ${hit_percent}% Miss: ${miss_percent}%"
+    echo -e "Numbers: ${guessed_numbers[@]: -10}"
+
+    # Increment step count
+    step=$((step + 1))
+done
