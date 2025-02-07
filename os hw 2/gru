@@ -1,0 +1,51 @@
+#!/usr/bin/python3
+
+
+import os
+import sys
+import random
+
+
+def main():
+    # Get the number of child processes to create
+    if len(sys.argv) != 2:
+        print("Usage: gru <N>")
+        sys.exit(1)
+
+    N = int(sys.argv[1])
+    if N <= 0:
+        print("N must be greater than 0.")
+        sys.exit(1)
+
+    pid = os.getpid()
+    print(f"Gru[{pid}]: process started.")
+
+    child_pids = []
+
+    for _ in range(N):
+        pid = os.fork()
+
+        if pid == 0:  # Child process
+            # Generate a random number between 5 and 10
+            random_time = random.randint(5, 10)
+            os.execve('./minion', ['./minion', str(random_time)], os.environ)
+
+        else:  # Parent process
+            child_pids.append(pid)
+            print(f"Gru[{os.getpid()}]: process created. PID {pid}.")
+
+    for pid in child_pids:
+        # Wait for child process to terminate
+        pid_terminated, status = os.waitpid(pid, 0)
+        exit_status = os.WEXITSTATUS(status)
+        print(f"Gru[{os.getpid()}]: process terminated. PID {pid_terminated}. Exit status {exit_status}.")
+
+        if exit_status != 0:
+            print(f"Gru[{os.getpid()}]: Restarting a failed child process.")
+            main()
+
+    sys.exit(0)
+
+
+if __name__ == '__main__':
+    main()
